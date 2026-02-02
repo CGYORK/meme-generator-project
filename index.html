@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    Meme Generator
+                </h1>
+                <p class="app-subtitle">Create hilarious memes in seconds</p>
+            </div>
+        </header>
+
+        <div class="app-container">
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <h2>Upload Image</h2>
+                    </div>
+                    <div class="upload-area">
+                        <input type="file" id="imageInput" accept="image/*">
+                        <label for="imageInput" class="upload-label">
+                            <span class="upload-text">Choose Image</span>
+                            <span class="upload-hint">PNG, JPG, GIF</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <h2>Template Gallery</h2>
+                    </div>
+                    <div id="templateGallery" class="template-gallery">
+                        <div class="template-gallery-loading">Loading templates...</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <h2>Text Boxes</h2>
+                    </div>
+                    <button id="addTextBtn" class="btn-add">
+                        Add Text Box
+                    </button>
+                    <div id="textBoxesContainer" class="text-boxes-list"></div>
+                </div>
+
+                <div class="sidebar-section sidebar-footer">
+                    <button id="downloadBtn" class="btn-download">
+                        Download Meme
+                    </button>
+                </div>
+            </aside>
+
+            <main class="canvas-area">
+                <div class="canvas-wrapper">
+                    <canvas id="memeCanvas"></canvas>
+                    <div class="canvas-placeholder" id="placeholder">
+                        <div class="placeholder-content">
+                            <h3>Ready to Create?</h3>
+                            <p>Upload an image to start making your meme</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+---
+description: Avoid purple/blue gradients or colors as primary colors
+globs: **/*.css,**/*.scss,**/*.sass,**/*.less,**/*.tsx,**/*.jsx,**/*.ts,**/*.js
+alwaysApply: false
+---
+
+# No Purple/Blue Primary Colors
+
+Do not use purple or blue gradients or colors as the primary color in designs.
+
+## Guidelines
+
+- **Primary colors**: Use colors other than purple or blue (e.g., green, orange, red, teal, yellow, etc.)
+- **Gradients**: Avoid gradients that include purple or blue as the dominant color
+- **Accent colors**: Purple/blue can be used as secondary or accent colors, but not as the primary brand color
+
+## Examples
+
+```css
+/* ❌ BAD - Purple/blue as primary */
+.primary-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header {
+  background-color: #3b82f6; /* Blue primary */
+}
+
+/* ✅ GOOD - Other colors as primary */
+.primary-button {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.header {
+  background-color: #10b981; /* Green primary */
+}
+
+/* ✅ GOOD - Purple/blue as accent is acceptable */
+.primary-button {
+  background-color: #ef4444; /* Red primary */
+  border: 2px solid #667eea; /* Purple accent */
+}
+```
