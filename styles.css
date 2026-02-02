@@ -201,17 +201,17 @@ input[type="file"] {
 
 /* Template Gallery */
 .template-gallery {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-direction: row;
     gap: 0.75rem;
-    max-height: 300px;
-    overflow-y: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 0.5rem 0;
 }
 
 .template-gallery-loading,
 .template-gallery-empty {
-    grid-column: 1 / -1;
+    width: 100%;
     text-align: center;
     padding: 2rem 1rem;
     color: var(--text-light);
@@ -231,6 +231,9 @@ input[type="file"] {
     display: flex;
     flex-direction: column;
     outline: none;
+    flex-shrink: 0;
+    width: 100px;
+    min-width: 100px;
 }
 
 .template-item:focus {
@@ -281,7 +284,7 @@ input[type="file"] {
 
 /* Template Gallery Scrollbar */
 .template-gallery::-webkit-scrollbar {
-    width: 6px;
+    height: 6px;
 }
 
 .template-gallery::-webkit-scrollbar-track {

@@ -17,6 +17,15 @@ let textBoxCounter = 0;
 let isDragging = false;
 let draggedTextBox = null;
 let dragOffset = { x: 0, y: 0 };
+let selectedTextBox = null;
+let isResizing = false;
+let resizeStart = { distance: 0, fontSize: 0 };
+
+const TEXT_BOX_PADDING = 20;
+const DELETE_BUTTON_SIZE = 18;
+const RESIZE_HANDLE_SIZE = 14;
+const MIN_FONT_SIZE = 12;
+const MAX_FONT_SIZE = 120;
 
 // Font families available
 const fontFamilies = [
@@ -327,7 +336,76 @@ function deleteTextBox(id) {
     if (textBoxDiv) {
         textBoxDiv.remove();
     }
+    if (selectedTextBox && selectedTextBox.id === id) {
+        selectedTextBox = null;
+    }
     drawMeme();
+}
+
+function getTextBoxBounds(textBox) {
+    const textForBounds = textBox.text && textBox.text.trim().length > 0 ? textBox.text : 'Text';
+
+    ctx.font = `${textBox.fontSize}px ${textBox.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const lines = textForBounds.split('\n');
+    const lineHeight = textBox.fontSize * 1.2;
+    const totalHeight = (lines.length - 1) * lineHeight;
+    const startY = textBox.y - (totalHeight / 2);
+    const endY = startY + (lines.length * lineHeight);
+
+    let maxWidth = 0;
+    lines.forEach(line => {
+        const metrics = ctx.measureText(line);
+        maxWidth = Math.max(maxWidth, metrics.width);
+    });
+
+    const halfWidth = (maxWidth / 2) + TEXT_BOX_PADDING;
+    const topY = startY - (textBox.fontSize / 2) - TEXT_BOX_PADDING;
+    const bottomY = endY + (textBox.fontSize / 2) + TEXT_BOX_PADDING;
+
+    return {
+        left: textBox.x - halfWidth,
+        right: textBox.x + halfWidth,
+        top: topY,
+        bottom: bottomY,
+        width: halfWidth * 2,
+        height: bottomY - topY
+    };
+}
+
+function isPointInRect(x, y, rect) {
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+function getDeleteButtonRect(bounds) {
+    return {
+        left: bounds.right - DELETE_BUTTON_SIZE,
+        right: bounds.right,
+        top: bounds.top,
+        bottom: bounds.top + DELETE_BUTTON_SIZE
+    };
+}
+
+function getResizeHandleRect(bounds) {
+    return {
+        left: bounds.right - RESIZE_HANDLE_SIZE,
+        right: bounds.right,
+        top: bounds.bottom - RESIZE_HANDLE_SIZE,
+        bottom: bounds.bottom
+    };
+}
+
+function updateFontSizeControls(textBox) {
+    const fontSizeInput = document.getElementById(`fontSize-${textBox.id}`);
+    const fontSizeValue = document.getElementById(`fontSizeValue-${textBox.id}`);
+    if (fontSizeInput) {
+        fontSizeInput.value = textBox.fontSize;
+    }
+    if (fontSizeValue) {
+        fontSizeValue.textContent = `${textBox.fontSize}px`;
+    }
 }
 
 // Get text box at mouse position
@@ -335,35 +413,8 @@ function getTextBoxAtPosition(x, y) {
     // Check in reverse order (top to bottom) to get the topmost text box
     for (let i = textBoxes.length - 1; i >= 0; i--) {
         const textBox = textBoxes[i];
-        if (!textBox.text) continue;
-
-        // Set font to measure text
-        ctx.font = `${textBox.fontSize}px ${textBox.fontFamily}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Split text by line breaks
-        const lines = textBox.text.split('\n');
-        const lineHeight = textBox.fontSize * 1.2;
-        const totalHeight = (lines.length - 1) * lineHeight;
-        const startY = textBox.y - (totalHeight / 2);
-        const endY = startY + (lines.length * lineHeight);
-
-        // Find the widest line for hitbox width
-        let maxWidth = 0;
-        lines.forEach(line => {
-            const metrics = ctx.measureText(line);
-            maxWidth = Math.max(maxWidth, metrics.width);
-        });
-
-        // Check if click is within text box bounds (with some padding)
-        const padding = 20;
-        const halfWidth = (maxWidth / 2) + padding;
-        const topY = startY - (textBox.fontSize / 2) - padding;
-        const bottomY = endY + (textBox.fontSize / 2) + padding;
-
-        if (x >= textBox.x - halfWidth && x <= textBox.x + halfWidth &&
-            y >= topY && y <= bottomY) {
+        const bounds = getTextBoxBounds(textBox);
+        if (isPointInRect(x, y, bounds)) {
             return textBox;
         }
     }
@@ -381,15 +432,49 @@ function handleCanvasMouseDown(e) {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
+    if (selectedTextBox) {
+        const bounds = getTextBoxBounds(selectedTextBox);
+        const deleteRect = getDeleteButtonRect(bounds);
+        const resizeRect = getResizeHandleRect(bounds);
+
+        if (isPointInRect(x, y, deleteRect)) {
+            deleteTextBox(selectedTextBox.id);
+            selectedTextBox = null;
+            canvas.style.cursor = 'default';
+            e.preventDefault();
+            return;
+        }
+
+        if (isPointInRect(x, y, resizeRect)) {
+            isResizing = true;
+            draggedTextBox = selectedTextBox;
+            const centerX = (bounds.left + bounds.right) / 2;
+            const centerY = (bounds.top + bounds.bottom) / 2;
+            resizeStart.distance = Math.max(1, Math.hypot(x - centerX, y - centerY));
+            resizeStart.fontSize = selectedTextBox.fontSize;
+            canvas.style.cursor = 'nwse-resize';
+            e.preventDefault();
+            return;
+        }
+    }
+
     const clickedTextBox = getTextBoxAtPosition(x, y);
-    
+
     if (clickedTextBox) {
+        selectedTextBox = clickedTextBox;
         isDragging = true;
         draggedTextBox = clickedTextBox;
         dragOffset.x = x - clickedTextBox.x;
         dragOffset.y = y - clickedTextBox.y;
         canvas.style.cursor = 'move';
+        drawMeme();
         e.preventDefault();
+        return;
+    }
+
+    if (selectedTextBox) {
+        selectedTextBox = null;
+        drawMeme();
     }
 }
 
@@ -404,6 +489,19 @@ function handleCanvasMouseMove(e) {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
+    if (isResizing && draggedTextBox) {
+        const bounds = getTextBoxBounds(draggedTextBox);
+        const centerX = (bounds.left + bounds.right) / 2;
+        const centerY = (bounds.top + bounds.bottom) / 2;
+        const currentDistance = Math.max(1, Math.hypot(x - centerX, y - centerY));
+        const scale = currentDistance / resizeStart.distance;
+        const newSize = Math.round(resizeStart.fontSize * scale);
+        draggedTextBox.fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, newSize));
+        updateFontSizeControls(draggedTextBox);
+        drawMeme();
+        return;
+    }
+
     if (isDragging && draggedTextBox) {
         // Update text box position
         draggedTextBox.x = x - dragOffset.x;
@@ -415,6 +513,21 @@ function handleCanvasMouseMove(e) {
 
         drawMeme();
     } else {
+        if (selectedTextBox) {
+            const bounds = getTextBoxBounds(selectedTextBox);
+            const deleteRect = getDeleteButtonRect(bounds);
+            const resizeRect = getResizeHandleRect(bounds);
+
+            if (isPointInRect(x, y, deleteRect)) {
+                canvas.style.cursor = 'pointer';
+                return;
+            }
+            if (isPointInRect(x, y, resizeRect)) {
+                canvas.style.cursor = 'nwse-resize';
+                return;
+            }
+        }
+
         // Update cursor if hovering over a text box
         const hoveredTextBox = getTextBoxAtPosition(x, y);
         canvas.style.cursor = hoveredTextBox ? 'move' : 'default';
@@ -423,8 +536,9 @@ function handleCanvasMouseMove(e) {
 
 // Handle canvas mouse up
 function handleCanvasMouseUp(e) {
-    if (isDragging) {
+    if (isDragging || isResizing) {
         isDragging = false;
+        isResizing = false;
         draggedTextBox = null;
         canvas.style.cursor = 'default';
     }
@@ -443,18 +557,45 @@ function handleCanvasTouchStart(e) {
     const x = (touch.clientX - rect.left) * scaleX;
     const y = (touch.clientY - rect.top) * scaleY;
 
+    if (selectedTextBox) {
+        const bounds = getTextBoxBounds(selectedTextBox);
+        const deleteRect = getDeleteButtonRect(bounds);
+        const resizeRect = getResizeHandleRect(bounds);
+
+        if (isPointInRect(x, y, deleteRect)) {
+            deleteTextBox(selectedTextBox.id);
+            selectedTextBox = null;
+            return;
+        }
+
+        if (isPointInRect(x, y, resizeRect)) {
+            isResizing = true;
+            draggedTextBox = selectedTextBox;
+            const centerX = (bounds.left + bounds.right) / 2;
+            const centerY = (bounds.top + bounds.bottom) / 2;
+            resizeStart.distance = Math.max(1, Math.hypot(x - centerX, y - centerY));
+            resizeStart.fontSize = selectedTextBox.fontSize;
+            return;
+        }
+    }
+
     const clickedTextBox = getTextBoxAtPosition(x, y);
-    
+
     if (clickedTextBox) {
+        selectedTextBox = clickedTextBox;
         isDragging = true;
         draggedTextBox = clickedTextBox;
         dragOffset.x = x - clickedTextBox.x;
         dragOffset.y = y - clickedTextBox.y;
+        drawMeme();
+    } else if (selectedTextBox) {
+        selectedTextBox = null;
+        drawMeme();
     }
 }
 
 function handleCanvasTouchMove(e) {
-    if (!currentImage || !isDragging || !draggedTextBox) return;
+    if (!currentImage || !draggedTextBox) return;
     e.preventDefault();
     
     const touch = e.touches[0];
@@ -465,20 +606,36 @@ function handleCanvasTouchMove(e) {
     const x = (touch.clientX - rect.left) * scaleX;
     const y = (touch.clientY - rect.top) * scaleY;
 
-    // Update text box position
-    draggedTextBox.x = x - dragOffset.x;
-    draggedTextBox.y = y - dragOffset.y;
+    if (isResizing) {
+        const bounds = getTextBoxBounds(draggedTextBox);
+        const centerX = (bounds.left + bounds.right) / 2;
+        const centerY = (bounds.top + bounds.bottom) / 2;
+        const currentDistance = Math.max(1, Math.hypot(x - centerX, y - centerY));
+        const scale = currentDistance / resizeStart.distance;
+        const newSize = Math.round(resizeStart.fontSize * scale);
+        draggedTextBox.fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, newSize));
+        updateFontSizeControls(draggedTextBox);
+        drawMeme();
+        return;
+    }
 
-    // Constrain to canvas bounds
-    draggedTextBox.x = Math.max(0, Math.min(canvas.width, draggedTextBox.x));
-    draggedTextBox.y = Math.max(0, Math.min(canvas.height, draggedTextBox.y));
+    if (isDragging) {
+        // Update text box position
+        draggedTextBox.x = x - dragOffset.x;
+        draggedTextBox.y = y - dragOffset.y;
 
-    drawMeme();
+        // Constrain to canvas bounds
+        draggedTextBox.x = Math.max(0, Math.min(canvas.width, draggedTextBox.x));
+        draggedTextBox.y = Math.max(0, Math.min(canvas.height, draggedTextBox.y));
+
+        drawMeme();
+    }
 }
 
 function handleCanvasTouchEnd(e) {
-    if (isDragging) {
+    if (isDragging || isResizing) {
         isDragging = false;
+        isResizing = false;
         draggedTextBox = null;
     }
 }
@@ -533,6 +690,41 @@ function drawMeme() {
             ctx.restore();
         });
     });
+
+    if (selectedTextBox) {
+        const bounds = getTextBoxBounds(selectedTextBox);
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(245, 87, 108, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(bounds.left, bounds.top, bounds.width, bounds.height);
+        ctx.setLineDash([]);
+
+        const deleteRect = getDeleteButtonRect(bounds);
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.95)';
+        ctx.fillRect(deleteRect.left, deleteRect.top, DELETE_BUTTON_SIZE, DELETE_BUTTON_SIZE);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(deleteRect.left + 4, deleteRect.top + 4);
+        ctx.lineTo(deleteRect.right - 4, deleteRect.bottom - 4);
+        ctx.moveTo(deleteRect.right - 4, deleteRect.top + 4);
+        ctx.lineTo(deleteRect.left + 4, deleteRect.bottom - 4);
+        ctx.stroke();
+
+        const resizeRect = getResizeHandleRect(bounds);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(resizeRect.left, resizeRect.top, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(resizeRect.left + 3, resizeRect.bottom - 3);
+        ctx.lineTo(resizeRect.right - 3, resizeRect.top + 3);
+        ctx.stroke();
+
+        ctx.restore();
+    }
 }
 
 // Download the meme
