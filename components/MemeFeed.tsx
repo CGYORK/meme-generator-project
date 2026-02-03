@@ -69,7 +69,7 @@ export default function MemeFeed() {
       <div className="app-container" style={{ gridTemplateColumns: '1fr' }}>
         <div style={{ padding: '2rem' }}>
           <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#ffffff' }}>
               Meme Feed
             </h2>
             <db.SignedIn>

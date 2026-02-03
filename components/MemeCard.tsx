@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Meme } from '@/types/meme';
 import { useUpvote } from '@/hooks/useUpvote';
 import { db } from '@/lib/instant';
@@ -14,7 +15,10 @@ function UpvoteButton({ meme }: { meme: Meme }) {
   return (
     <button
       className={`upvote-button ${hasUpvoted ? 'upvoted' : ''}`}
-      onClick={toggleUpvote}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleUpvote();
+      }}
       disabled={isToggling}
     >
       <span>▲</span>
@@ -24,22 +28,28 @@ function UpvoteButton({ meme }: { meme: Meme }) {
 }
 
 export default function MemeCard({ meme }: MemeCardProps) {
+  const router = useRouter();
   const upvoteCount = meme.upvoteCount || 0;
 
+  const handleCardClick = () => {
+    router.push(`/meme/${meme.id}`);
+  };
+
   return (
-    <div className="meme-card">
-      <img
-        src={meme.imageUrl}
-        alt="Meme"
-        className="meme-image"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-      />
+    <div className="meme-card" onClick={handleCardClick}>
+      <div className="meme-image-container">
+        <img
+          src={meme.imageUrl}
+          alt="Meme"
+          className="meme-image"
+        />
+      </div>
       <div className="meme-footer">
         <db.SignedIn>
           <UpvoteButton meme={meme} />
         </db.SignedIn>
         <db.SignedOut>
-          <div className="upvote-button" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+          <div className="upvote-button" style={{ opacity: 0.6, cursor: 'not-allowed', color: '#ffffff' }}>
             <span>▲</span>
             <span>{upvoteCount}</span>
           </div>
