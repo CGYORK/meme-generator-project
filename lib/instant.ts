@@ -1,6 +1,6 @@
 'use client';
 
-import { init, id } from '@instantdb/react';
+import { init, id, type InstantReactClient } from '@instantdb/react';
 
 const appId = process.env.NEXT_PUBLIC_INSTANT_APP_ID;
 
@@ -10,20 +10,22 @@ if (!appId) {
 
 // Use globalThis to persist db instance across hot reloads
 declare global {
-  var __instantdb_instance: ReturnType<typeof init> | undefined;
+  var __instantdb_instance: InstantReactClient<any> | undefined;
 }
 
 // Initialize db instance - use global singleton to persist across hot reloads
-if (typeof window !== 'undefined') {
-  if (!globalThis.__instantdb_instance) {
-    globalThis.__instantdb_instance = init({ appId });
+function getDb(): InstantReactClient<any> {
+  if (typeof window !== 'undefined') {
+    if (!globalThis.__instantdb_instance) {
+      globalThis.__instantdb_instance = init({ appId });
+    }
+    return globalThis.__instantdb_instance;
   }
+  // Server-side: create a temporary instance just for type checking
+  // This won't actually be used at runtime since components are client-only
+  return init({ appId });
 }
 
-// Always export from globalThis on client, or create new on SSR
-// This ensures db.useQuery is always the same function reference
-export const db = typeof window !== 'undefined' 
-  ? globalThis.__instantdb_instance!
-  : init({ appId });
+export const db = getDb();
 
 export { id };
