@@ -15,7 +15,7 @@ export default function MemeFeed() {
   const { data, isLoading, error } = db.useQuery(query);
   const memes = useMemo(() => {
     if (!data?.memes) return [];
-    return Object.values(data.memes) as Meme[];
+    return Object.values(data.memes) as unknown as Meme[];
   }, [data?.memes]);
 
   if (isLoading) {

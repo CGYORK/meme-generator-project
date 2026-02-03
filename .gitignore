@@ -80,3 +80,4 @@ build/
 node_modules/
 .env.local
 package-lock.json
+.vercel

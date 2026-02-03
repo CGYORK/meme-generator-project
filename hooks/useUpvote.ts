@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { db, id } from '@/lib/instant';
+import { Meme, Upvote } from '@/types/meme';
 
 export function useUpvote(memeId: string) {
   const [isToggling, setIsToggling] = useState(false);
@@ -31,12 +32,14 @@ export function useUpvote(memeId: string) {
 
   const existingUpvote = useMemo(() => {
     if (!data?.upvotes) return null;
-    return Object.values(data.upvotes)[0] || null;
+    const upvote = Object.values(data.upvotes)[0];
+    return upvote ? (upvote as unknown as Upvote) : null;
   }, [data?.upvotes]);
 
   const meme = useMemo(() => {
     if (!data?.memes) return null;
-    return Object.values(data.memes).find((m: any) => m.id === memeId) || null;
+    const found = Object.values(data.memes).find((m: any) => m.id === memeId);
+    return found ? (found as unknown as Meme) : null;
   }, [data?.memes, memeId]);
 
   const hasUpvoted = !!existingUpvote;

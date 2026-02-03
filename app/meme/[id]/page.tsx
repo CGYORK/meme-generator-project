@@ -22,7 +22,8 @@ function MemeDetailContent({ memeId }: { memeId: string }) {
 
   const meme = useMemo(() => {
     if (!data?.memes) return null;
-    return Object.values(data.memes).find((m: any) => m.id === memeId) as Meme | null;
+    const found = Object.values(data.memes).find((m: any) => m.id === memeId);
+    return found ? (found as unknown as Meme) : null;
   }, [data?.memes, memeId]);
 
   if (isLoading) {
