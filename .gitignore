@@ -76,3 +76,7 @@ build/
 *.tmp
 *.temp
 .cache/
+.next/
+node_modules/
+.env.local
+package-lock.json

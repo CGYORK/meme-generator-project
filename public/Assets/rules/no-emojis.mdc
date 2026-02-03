@@ -1,0 +1,17 @@
+---
+description: Do not include emojis in responses or code unless explicitly requested
+alwaysApply: true
+---
+
+# No Emojis Policy
+
+Do not include emojis anywhere in your responses, code comments, documentation, or any other output unless the user explicitly requests them.
+
+This applies to:
+- Code comments and documentation
+- Error messages and console output
+- UI text and labels
+- Commit messages
+- Any other text output
+
+Only use emojis when the user explicitly asks for them (e.g., "add emojis to this", "make it more fun with emojis", etc.).
